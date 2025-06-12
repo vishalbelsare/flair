@@ -42,7 +42,7 @@ To use the recently introduced [FLERT](https://arxiv.org/abs/2011.06993) the fol
 # Example
 
 The following example shows how to fine-tune a model for the recently released [Masakhane](https://arxiv.org/abs/2103.11811) dataset for
-the Luo language. We choose XLM-RoBERTa Base for fine-tuning. In this example, the best model (choosen on performance on development set)
+the Luo language. We choose XLM-RoBERTa Base for fine-tuning. In this example, the best model (chosen on performance on development set)
 is used for final evaluation on the test set.
 
 ## Choosing the dataset
@@ -105,7 +105,7 @@ For this example we could reach a F1-score of 75.38% with is on-par with the res
 ## Fine-Tuning using FLERT approach
 
 In the example, we extend our fine-tuning steps and use an additional context window of 64 tokens, as it was proposed in the
-[FLERT](ttps://arxiv.org/abs/2011.06993) paper.
+[FLERT](https://arxiv.org/abs/2011.06993) paper.
 
 As the Masakhane dataset does not provide any document boundaries, we leave this option unused.
 

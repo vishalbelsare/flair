@@ -106,7 +106,8 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-Pipfile.lock
-
 resources/taggers/
 regression_train/
+/doc_build/
+
+scripts/

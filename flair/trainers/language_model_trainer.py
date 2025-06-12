@@ -1,23 +1,23 @@
-import time, datetime
+import datetime
+import logging
+import math
 import random
-import sys
+import time
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Union
+from typing import Any, Optional, Union
 
+import torch
 from torch import cuda
-from torch.optim import AdamW
-from torch.utils.data import Dataset, DataLoader
+from torch.optim import AdamW, Optimizer
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.optim.sgd import SGD
-
-try:
-    from apex import amp
-except ImportError:
-    amp = None
+from torch.utils.data import DataLoader, Dataset
 
 import flair
 from flair.data import Dictionary
 from flair.models import LanguageModel
-from flair.optim import *
+from flair.optim import SGDW, ReduceLRWDOnPlateau
 from flair.training_utils import add_file_handler
 
 log = logging.getLogger("flair")
@@ -32,14 +32,12 @@ class TextDataset(Dataset):
         forward: bool = True,
         split_on_char: bool = True,
         random_case_flip: bool = True,
-        document_delimiter: str = '\n',
+        document_delimiter: str = "\n",
         shuffle: bool = True,
-    ):
-        if type(path) is str:
-            path = Path(path)
+    ) -> None:
+        path = Path(path)
         assert path.exists()
 
-        self.files = None
         self.path = path
         self.dictionary = dictionary
         self.split_on_char = split_on_char
@@ -54,26 +52,28 @@ class TextDataset(Dataset):
         else:
             self.files = [path]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.files)
 
-    def __getitem__(self, index=0) -> torch.tensor:
+    def __getitem__(self, index=0) -> torch.Tensor:
         """Tokenizes a text file on character basis."""
-        if type(self.files[index]) is str:
+        if isinstance(self.files[index], str):
             self.files[index] = Path(self.files[index])
         assert self.files[index].exists()
 
         with self.files[index].open("r", encoding="utf-8") as fin:
-            lines = (doc + self.document_delimiter for doc in fin.read().split(self.document_delimiter) if doc)
+            text_lines: Iterable[str] = (
+                doc + self.document_delimiter for doc in fin.read().split(self.document_delimiter) if doc
+            )
             if self.random_case_flip:
-                lines = map(self.random_casechange, lines)
-            lines = list(map(list if self.split_on_char else str.split, lines))
+                text_lines = map(self.random_casechange, text_lines)
+            lines = [list(line) if self.split_on_char else line.split() for line in text_lines]
 
         log.info(f"read text file with {len(lines)} lines")
 
         if self.shuffle:
             random.shuffle(lines)
-            log.info(f"shuffled")
+            log.info("shuffled")
 
         if self.expand_vocab:
             for chars in lines:
@@ -81,8 +81,8 @@ class TextDataset(Dataset):
                     self.dictionary.add_item(char)
 
         ids = torch.tensor(
-            [self.dictionary.get_idx_for_item(char) for chars in lines for char in chars], 
-            dtype=torch.long
+            [self.dictionary.get_idx_for_item(char) for chars in lines for char in chars],
+            dtype=torch.long,
         )
         if not self.forward:
             ids = ids.flip(0)
@@ -98,7 +98,7 @@ class TextDataset(Dataset):
         return line
 
 
-class TextCorpus(object):
+class TextCorpus:
     def __init__(
         self,
         path: Union[Path, str],
@@ -106,16 +106,15 @@ class TextCorpus(object):
         forward: bool = True,
         character_level: bool = True,
         random_case_flip: bool = True,
-        document_delimiter: str = '\n',
-    ):
+        document_delimiter: str = "\n",
+    ) -> None:
         self.dictionary: Dictionary = dictionary
         self.forward = forward
         self.split_on_char = character_level
         self.random_case_flip = random_case_flip
         self.document_delimiter: str = document_delimiter
 
-        if type(path) == str:
-            path = Path(path)
+        path = Path(path)
 
         self.train = TextDataset(
             path / "train",
@@ -128,7 +127,8 @@ class TextCorpus(object):
             shuffle=True,
         )
 
-        # TextDataset returns a list. valid and test are only one file, so return the first element
+        # TextDataset returns a list. valid and test are only one file,
+        # so return the first element
         self.valid = TextDataset(
             path / "valid.txt",
             dictionary,
@@ -156,15 +156,16 @@ class LanguageModelTrainer:
         self,
         model: LanguageModel,
         corpus: TextCorpus,
-        optimizer: Optimizer = SGD,
+        optimizer: type[Optimizer] = SGD,
         test_mode: bool = False,
         epoch: int = 0,
         split: int = 0,
         loss: float = 10000,
-        optimizer_state: dict = None,
-    ):
+        optimizer_state: Optional[dict[str, Any]] = None,
+        scaler_state: Optional[dict[str, Any]] = None,
+    ) -> None:
         self.model: LanguageModel = model
-        self.optimizer: Optimizer = optimizer
+        self.optimizer: type[Optimizer] = optimizer
         self.corpus: TextCorpus = corpus
         self.test_mode: bool = test_mode
 
@@ -174,6 +175,7 @@ class LanguageModelTrainer:
         self.split = split
         self.loss = loss
         self.optimizer_state = optimizer_state
+        self.scaler_state = scaler_state
 
     def train(
         self,
@@ -189,24 +191,10 @@ class LanguageModelTrainer:
         grow_to_sequence_length: int = 0,
         num_workers: int = 2,
         use_amp: bool = False,
-        amp_opt_level: str = "O1",
         **kwargs,
     ):
-
-        if use_amp:
-            if sys.version_info < (3, 0):
-                raise RuntimeError("Apex currently only supports Python 3. Aborting.")
-            if amp is None:
-                raise RuntimeError(
-                    "Failed to import apex. Please install apex from https://www.github.com/nvidia/apex "
-                    "to enable mixed-precision training."
-                )
-
         # cast string to Path
-        if type(base_path) is str:
-            base_path = Path(base_path)
-
-        add_file_handler(log, base_path / "training.log")
+        base_path = Path(base_path)
 
         number_of_splits: int = len(self.corpus.train)
 
@@ -215,7 +203,8 @@ class LanguageModelTrainer:
         # error message if the validation dataset is too small
         if val_data.size(0) == 1:
             raise RuntimeError(
-                f"ERROR: Your validation dataset is too small. For your mini_batch_size, the data needs to "
+                f"ERROR: Your validation dataset is too small. For your "
+                f"mini_batch_size, the data needs to "
                 f"consist of at least {mini_batch_size * 2} characters!"
             )
 
@@ -224,38 +213,33 @@ class LanguageModelTrainer:
         savefile = base_path / "best-lm.pt"
 
         try:
+            log_handler = add_file_handler(log, base_path / "training.log")
+
             best_val_loss = self.loss
-            optimizer = self.optimizer(
-                self.model.parameters(), lr=learning_rate, **kwargs
-            )
+            kwargs["lr"] = learning_rate
+            optimizer = self.optimizer(self.model.parameters(), **kwargs)
+
+            scaler = torch.cuda.amp.GradScaler(enabled=use_amp and flair.device.type != "cpu")
+
+            if self.scaler_state:
+                scaler.load_state_dict(self.scaler_state)
+
             if self.optimizer_state is not None:
                 optimizer.load_state_dict(self.optimizer_state)
 
             if isinstance(optimizer, (AdamW, SGDW)):
-                scheduler: ReduceLRWDOnPlateau = ReduceLRWDOnPlateau(
-                    optimizer, verbose=True, factor=anneal_factor, patience=patience
-                )
+                scheduler: ReduceLROnPlateau = ReduceLRWDOnPlateau(optimizer, factor=anneal_factor, patience=patience)
             else:
-                scheduler: ReduceLROnPlateau = ReduceLROnPlateau(
-                    optimizer, verbose=True, factor=anneal_factor, patience=patience
-                )
+                scheduler = ReduceLROnPlateau(optimizer, factor=anneal_factor, patience=patience)
 
-            if use_amp:
-                self.model, optimizer = amp.initialize(
-                    self.model, optimizer, opt_level=amp_opt_level
-                )
-
-            training_generator = DataLoader(
-                self.corpus.train, shuffle=False, num_workers=num_workers
-            )
+            training_generator = DataLoader(self.corpus.train, shuffle=False, num_workers=num_workers)
 
             for epoch in range(self.epoch, max_epochs):
                 epoch_start_time = time.time()
-                # Shuffle training files randomly after serially iterating through corpus one
+                # Shuffle training files randomly after serially iterating
+                # through corpus one
                 if epoch > 0:
-                    training_generator = DataLoader(
-                        self.corpus.train, shuffle=True, num_workers=num_workers
-                    )
+                    training_generator = DataLoader(self.corpus.train, shuffle=True, num_workers=num_workers)
                     self.model.save_checkpoint(
                         base_path / f"epoch_{epoch}.pt",
                         optimizer,
@@ -264,11 +248,9 @@ class LanguageModelTrainer:
                         best_val_loss,
                     )
 
-                # iterate through training data, starting at self.split (for checkpointing)
-                for curr_split, train_slice in enumerate(
-                    training_generator, self.split
-                ):
-
+                # iterate through training data, starting at
+                # self.split (for checkpointing)
+                for curr_split, train_slice in enumerate(training_generator, self.split):
                     if sequence_length < grow_to_sequence_length:
                         sequence_length += 1
                     log.info(f"Sequence length is {sequence_length}")
@@ -278,10 +260,7 @@ class LanguageModelTrainer:
                     curr_split += 1
                     train_data = self._batchify(train_slice.flatten(), mini_batch_size)
 
-                    log.info(
-                        "Split %d" % curr_split
-                        + "\t - ({:%H:%M:%S})".format(datetime.datetime.now())
-                    )
+                    log.info(f"Split {curr_split}\t - ({datetime.datetime.now():%H:%M:%S})")
 
                     for group in optimizer.param_groups:
                         learning_rate = group["lr"]
@@ -295,45 +274,41 @@ class LanguageModelTrainer:
                     # not really sure what this does
                     ntokens = len(self.corpus.dictionary)
 
-                    total_loss = 0
+                    total_loss = torch.zeros(1, device=flair.device)
                     start_time = time.time()
 
-                    for batch, i in enumerate(
-                        range(0, train_data.size(0) - 1, sequence_length)
-                    ):
+                    for batch, i in enumerate(range(0, train_data.size(0) - 1, sequence_length)):
                         data, targets = self._get_batch(train_data, i, sequence_length)
 
                         if not data.is_cuda and cuda.is_available():
-                            log.info(
-                                "Batch %d is not on CUDA, training will be very slow"
-                                % (batch)
-                            )
+                            log.info("Batch %d is not on CUDA, training will be very slow", batch)
                             raise Exception("data isnt on cuda")
 
                         self.model.zero_grad()
                         optimizer.zero_grad()
+                        with torch.autocast(device_type=flair.device.type, enabled=use_amp):
+                            # do the forward pass in the model
+                            output, rnn_output, hidden = self.model.forward(data, hidden)
 
-                        # do the forward pass in the model
-                        output, rnn_output, hidden = self.model.forward(data, hidden)
-
-                        # try to predict the targets
-                        loss = self.loss_function(output.view(-1, ntokens), targets)
+                            # try to predict the targets
+                            loss = self.loss_function(output.view(-1, ntokens), targets)
                         # Backward
-                        if use_amp:
-                            with amp.scale_loss(loss, optimizer) as scaled_loss:
-                                scaled_loss.backward()
-                        else:
-                            loss.backward()
+                        scaler.scale(loss).backward()
 
-                        # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
+                        scaler.unscale_(optimizer)
+
+                        # `clip_grad_norm` helps prevent the exploding gradient
+                        # problem in RNNs / LSTMs.
                         torch.nn.utils.clip_grad_norm_(self.model.parameters(), clip)
-
-                        optimizer.step()
+                        scaler.step(optimizer)
+                        scaler.update()
 
                         total_loss += loss.data
 
-                        # We detach the hidden state from how it was previously produced.
-                        # If we didn't, the model would try backpropagating all the way to start of the dataset.
+                        # We detach the hidden state from how it was
+                        # previously produced.
+                        # If we didn't, the model would try backpropagating
+                        # all the way to start of the dataset.
                         hidden = self._repackage_hidden(hidden)
 
                         # explicitly remove loss to clear up memory
@@ -343,32 +318,27 @@ class LanguageModelTrainer:
                             cur_loss = total_loss.item() / self.log_interval
                             elapsed = time.time() - start_time
                             log.info(
-                                "| split {:3d} /{:3d} | {:5d}/{:5d} batches | ms/batch {:5.2f} | "
-                                "loss {:5.2f} | ppl {:8.2f}".format(
-                                    curr_split,
-                                    number_of_splits,
-                                    batch,
-                                    len(train_data) // sequence_length,
-                                    elapsed * 1000 / self.log_interval,
-                                    cur_loss,
-                                    math.exp(cur_loss),
-                                )
+                                f"| split {curr_split:3d}/{number_of_splits:3d} | {batch:5d}/{len(train_data) // sequence_length:5d} batches "
+                                f"| ms/batch {elapsed * 1000 / self.log_interval:5.2f} | loss {cur_loss:5.4f} | ppl {math.exp(cur_loss):5.4f}"
                             )
-                            total_loss = 0
+                            total_loss = torch.zeros(1, device=flair.device)
                             start_time = time.time()
 
-                    log.info(
-                        "%d seconds for train split %d"
-                        % (time.time() - split_start_time, curr_split)
-                    )
-
-                    ###############################################################################
+                    ##########################################################
                     self.model.eval()
 
                     val_loss = self.evaluate(val_data, mini_batch_size, sequence_length)
+
+                    # Save the model if the validation loss is the best we've
+                    # seen so far.
+                    if val_loss < best_val_loss:
+                        self.model.save(savefile)
+                        best_val_loss = val_loss
+                        log.info("best split so far")
+
                     scheduler.step(val_loss)
 
-                    log.info("best loss so far {:5.2f}".format(best_val_loss))
+                    log.info(f"best loss so far {best_val_loss:5.8f}")
 
                     log.info(self.model.generate_text())
 
@@ -381,41 +351,33 @@ class LanguageModelTrainer:
                             best_val_loss,
                         )
 
-                    # Save the model if the validation loss is the best we've seen so far.
-                    if val_loss < best_val_loss:
-                        self.model.best_score = best_val_loss
-                        self.model.save(savefile)
-                        best_val_loss = val_loss
-
-                    ###############################################################################
+                    ##########################################################
                     # print info
-                    ###############################################################################
+                    ##########################################################
                     log.info("-" * 89)
 
                     summary = (
-                        "| end of split {:3d} /{:3d} | epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | "
-                        "valid ppl {:8.2f} | learning rate {:3.4f}".format(
-                            curr_split,
-                            number_of_splits,
-                            epoch + 1,
-                            (time.time() - split_start_time),
-                            val_loss,
-                            math.exp(val_loss),
-                            learning_rate,
-                        )
+                        f"| end of split {curr_split:3d} /{number_of_splits:3d} | epoch {epoch + 1:3d} | time: "
+                        f"{(time.time() - split_start_time):5.2f}s | valid loss {val_loss:5.4f} | valid ppl "
+                        f"{math.exp(val_loss):5.4f} | learning rate {learning_rate:3.4f}"
                     )
 
                     with open(loss_txt, "a") as myfile:
-                        myfile.write("%s\n" % summary)
+                        myfile.write(f"{summary}\n")
 
                     log.info(summary)
                     log.info("-" * 89)
+                    log.info("%d seconds for train split %d", time.time() - split_start_time, curr_split)
 
                 log.info("Epoch time: %.2f" % (time.time() - epoch_start_time))
 
         except KeyboardInterrupt:
             log.info("-" * 89)
             log.info("Exiting from training early")
+        finally:
+            if log_handler is not None:
+                log_handler.close()
+                log.removeHandler(log_handler)
 
         ###############################################################################
         # final testing
@@ -423,11 +385,9 @@ class LanguageModelTrainer:
         test_data = self._batchify(self.corpus.test, mini_batch_size)
         test_loss = self.evaluate(test_data, mini_batch_size, sequence_length)
 
-        summary = "TEST: valid loss {:5.2f} | valid ppl {:8.2f}".format(
-            test_loss, math.exp(test_loss)
-        )
+        summary = f"TEST: valid loss {test_loss:5.4f} | valid ppl {math.exp(test_loss):8.4f}"
         with open(loss_txt, "a") as myfile:
-            myfile.write("%s\n" % summary)
+            myfile.write(f"{summary}\n")
 
         log.info(summary)
         log.info("-" * 89)
@@ -464,8 +424,8 @@ class LanguageModelTrainer:
     def _get_batch(source, i, sequence_length):
         seq_len = min(sequence_length, len(source) - 1 - i)
 
-        data = source[i : i + seq_len].clone().detach()
-        target = source[i + 1 : i + 1 + seq_len].view(-1).clone().detach()
+        data = source[i : i + seq_len]
+        target = source[i + 1 : i + 1 + seq_len].view(-1)
 
         data = data.to(flair.device)
         target = target.to(flair.device)
@@ -475,13 +435,15 @@ class LanguageModelTrainer:
     @staticmethod
     def _repackage_hidden(h):
         """Wraps hidden states in new tensors, to detach them from their history."""
-        return tuple(v.clone().detach() for v in h)
+        return tuple(v.detach() for v in h)
 
     @staticmethod
     def load_checkpoint(
-        checkpoint_file: Union[str, Path], corpus: TextCorpus, optimizer: Optimizer = SGD
+        checkpoint_file: Union[str, Path],
+        corpus: TextCorpus,
+        optimizer: type[Optimizer] = SGD,
     ):
-        if type(checkpoint_file) is str:
+        if isinstance(checkpoint_file, str):
             checkpoint_file = Path(checkpoint_file)
 
         checkpoint = LanguageModel.load_checkpoint(checkpoint_file)
@@ -493,4 +455,5 @@ class LanguageModelTrainer:
             split=checkpoint["split"],
             loss=checkpoint["loss"],
             optimizer_state=checkpoint["optimizer_state_dict"],
+            scaler_state=checkpoint.get("scaler_state_dict"),
         )

@@ -1,5 +1,9 @@
-import pytest
 from pathlib import Path
+
+import pytest
+import torch
+
+import flair
 
 
 @pytest.fixture(scope="module")
@@ -12,37 +16,51 @@ def tasks_base_path(resources_path):
     return resources_path / "tasks"
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def results_base_path(resources_path):
-    return resources_path / "results"
+    path = resources_path / "results"
+    try:
+        yield path
+    finally:
+        for p in reversed(list(path.rglob("*"))):
+            if p.is_file():
+                p.unlink()
+            else:
+                p.rmdir()
+        if path.is_dir():
+            path.rmdir()
+
+
+@pytest.fixture(autouse=True)
+def set_cpu(force_cpu):
+    if force_cpu:
+        flair.device = torch.device("cpu")
 
 
 def pytest_addoption(parser):
-    parser.addoption(
-        "--runslow", action="store_true", default=False, help="run slow tests"
-    )
     parser.addoption(
         "--runintegration",
         action="store_true",
         default=False,
         help="run integration tests",
     )
+    parser.addoption(
+        "--force-cpu",
+        action="store_true",
+        default=False,
+        help="use cpu for tests even when gpu is available",
+    )
 
 
 def pytest_collection_modifyitems(config, items):
-    if config.getoption("--runslow") and config.getoption("--runintegration"):
-        return
-
-    if not config.getoption("--runslow"):
-        skip_slow = pytest.mark.skip(reason="need --runslow option to run")
-        for item in items:
-            if "slow" in item.keywords:
-                item.add_marker(skip_slow)
-
     if not config.getoption("--runintegration"):
-        skip_integration = pytest.mark.skip(
-            reason="need --runintegration option to run"
-        )
+        skip_integration = pytest.mark.skip(reason="need --runintegration option to run")
         for item in items:
             if "integration" in item.keywords:
                 item.add_marker(skip_integration)
+
+
+def pytest_generate_tests(metafunc):
+    option_value = metafunc.config.getoption("--force-cpu")
+    if "force_cpu" in metafunc.fixturenames and option_value is not None:
+        metafunc.parametrize("force_cpu", [option_value])

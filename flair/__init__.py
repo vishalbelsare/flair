@@ -1,31 +1,52 @@
+import logging.config
 import os
-import torch
 from pathlib import Path
+
+import torch
 from transformers import set_seed as hf_set_seed
 
 # global variable: cache_root
-cache_root = Path(os.getenv('FLAIR_CACHE_ROOT', Path(Path.home(), ".flair")))
+from .file_utils import set_proxies
+
+cache_root = Path(os.getenv("FLAIR_CACHE_ROOT", Path(Path.home(), ".flair")))
+"""The path to the cache folder Flair is using.
+
+This value defaults to `<Home Directory>/.flair`.
+You can choose the path by setting the `FLAIR_CACHE_ROOT` environment variable.
+"""
+
+device: torch.device
+"""Flair is using a single device for everything. You can set this device by overwriting this variable.
+
+The device will be automatically set to the first available GPU if a GPU is present and the 'FLAIR_DEVICE' environment
+variable is not set to 'cpu', otherwise it will default to the CPU, and a specific GPU can be chosen by setting the 'FLAIR_DEVICE'
+environment variable to its index.
+"""
+
+# Get the device from the environment variable
+device_id = os.environ.get("FLAIR_DEVICE")
 
 # global variable: device
-device = None
-if torch.cuda.is_available():
-    device = torch.device("cuda:0")
+if torch.cuda.is_available() and device_id != "cpu":
+    # No need for correctness checks, torch is doing it
+    device = torch.device(f"cuda:{device_id}") if device_id else torch.device("cuda:0")
 else:
     device = torch.device("cpu")
 
-# global variable: embedding_storage_mode
-embedding_storage_mode = "default"
+# global variable: version
+__version__ = "0.15.1"
+"""The current version of the flair library installed."""
 
-from . import data
-from . import models
-from . import visual
-from . import trainers
-from . import nn
-from .training_utils import AnnealOnPlateau
+# global variable: arrow symbol
+_arrow = " → "
 
-import logging.config
-
-__version__ = "0.10"
+from . import (  # noqa: E402 import after setting device
+    data,
+    models,
+    nn,
+    trainers,
+    visual,
+)
 
 logging.config.dictConfig(
     {
@@ -40,13 +61,40 @@ logging.config.dictConfig(
                 "stream": "ext://sys.stdout",
             }
         },
-        "loggers": {
-            "flair": {"handlers": ["console"], "level": "INFO", "propagate": False}
-        },
+        "loggers": {"flair": {"handlers": ["console"], "level": "INFO", "propagate": False}},
     }
 )
 
 logger = logging.getLogger("flair")
+"""The logger used by Flair.
+
+You can reconfigure it to change the log output to your likings.
+"""
+
 
 def set_seed(seed: int):
+    """Set the seed for all random generators used in training.
+
+    Use this method to guarantee reproducibility of experiments.
+
+    Args:
+        seed: any value you want
+
+    """
     hf_set_seed(seed)
+
+
+__all__ = [
+    "__version__",
+    "cache_root",
+    "data",
+    "datasets",
+    "device",
+    "logger",
+    "models",
+    "nn",
+    "set_proxies",
+    "set_seed",
+    "trainers",
+    "visual",
+]

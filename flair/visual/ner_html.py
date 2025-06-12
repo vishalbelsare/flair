@@ -1,5 +1,5 @@
 import html
-from typing import Union, List
+from typing import Union
 
 from flair.data import Sentence
 
@@ -24,23 +24,24 @@ HTML_PAGE = """
 """
 
 
-def split_to_spans(s: Sentence):
+def split_to_spans(s: Sentence, label_name="ner"):
     orig = s.to_original_text()
     last_idx = 0
     spans = []
-    tagged_ents = s.get_spans("ner")
+    tagged_ents = s.get_labels(label_name)
     for ent in tagged_ents:
-        if last_idx != ent.start_pos:
-            spans.append((orig[last_idx : ent.start_pos], None))
-        spans.append((ent.text, ent.tag))
-        last_idx = ent.end_pos
+        if last_idx != ent.data_point.start_position:
+            spans.append((orig[last_idx : ent.data_point.start_position], None))
+        spans.append((ent.data_point.text, ent.value))
+        assert ent.data_point.end_position is not None
+        last_idx = ent.data_point.end_position
     if last_idx < len(orig) - 1:
         spans.append((orig[last_idx : len(orig)], None))
     return spans
 
 
 def render_ner_html(
-    sentences: Union[List[Sentence], Sentence],
+    sentences: Union[list[Sentence], Sentence],
     title: str = "Flair",
     colors={
         "PER": "#F7FF53",
@@ -51,21 +52,26 @@ def render_ner_html(
     },
     default_color: str = "#ddd",
     wrap_page=True,
+    label_name="ner",
 ) -> str:
-    """
-    :param sentences: single sentence or list of sentences to convert to HTML
-    :param title: title of the HTML page
-    :param colors: dict where keys are tags and values are color HTML codes
-    :param default_color: color to use if colors parameter is missing a tag
-    :param wrap_page: if True method returns result of processing sentences wrapped by &lt;html&gt; and &lt;body&gt; tags, otherwise - without these tags
-    :return: HTML as a string
+    """Create the html code to visualize some sentences.
+
+    Args:
+        sentences: single sentence or list of sentences to convert to HTML
+        title: title of the HTML page
+        colors: dict where keys are tags and values are color HTML codes
+        default_color: color to use if colors parameter is missing a tag
+        wrap_page: if True method returns result of processing sentences wrapped by &lt;html&gt; and &lt;body&gt; tags, otherwise - without these tags
+        label_name: the label name to specify which labels of the sentence are visualized.
+
+    Returns: HTML as a string
     """
     if isinstance(sentences, Sentence):
         sentences = [sentences]
     sentences_html = []
     for s in sentences:
-        spans = split_to_spans(s)
-        spans_html = list()
+        spans = split_to_spans(s, label_name=label_name)
+        spans_html = []
         for fragment, tag in spans:
             escaped_fragment = html.escape(fragment).replace("\n", "<br/>")
             if tag:

@@ -1,6 +1,6 @@
 # Korean documentation for flairNLP
-flairNLP를 한국어로 이해하기 쉽게 번역한 튜토리얼 번역본입니다.    
 
+flairNLP를 한국어로 이해하기 쉽게 번역한 튜토리얼 번역본입니다.
 
 ![alt text](https://github.com/flairNLP/flair/blob/master/resources/docs/flair_logo_2020.png?raw=true)
 
@@ -9,25 +9,24 @@ flairNLP를 한국어로 이해하기 쉽게 번역한 튜토리얼 번역본입
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT)
 
-**최첨단 NLP**를 위한 매우 간단한 프레임워크입니다. 
+**최첨단 NLP**를 위한 매우 간단한 프레임워크입니다.
 [Humboldt University of Berlin](https://www.informatik.hu-berlin.de/en/forschung-en/gebiete/ml-en/) 및 친구들에 의해 개발되었습니다.
 
 ---
 
 Flair는:
 
-* **강력한 NLP 라이브러리입니다.**    
- Flair를 사용하면 명명된 개체 인식(NER), 품사 태깅(PoS), [생체 의학 데이터](https://github.com/flairNLP/flair/blob/94393aa82444f28c5a1da6057b8ff57b3cb390e6/resources/docs/HUNFLAIR.md)에 대한 특별 지원과 같은 최첨단 자연어 처리(NLP) 모델을 텍스트에 적용할 수 있습니다.
- 또한 빠르게 증가하는 언어를 지원하여 명확화 및 분류를 감지합니다.
+- **강력한 NLP 라이브러리입니다.**
+  Flair를 사용하면 명명된 개체 인식(NER), 품사 태깅(PoS), [생체 의학 데이터](https://github.com/flairNLP/flair/blob/94393aa82444f28c5a1da6057b8ff57b3cb390e6/resources/docs/HUNFLAIR.md)에 대한 특별 지원과 같은 최첨단 자연어 처리(NLP) 모델을 텍스트에 적용할 수 있습니다.
+  또한 빠르게 증가하는 언어를 지원하여 명확화 및 분류를 감지합니다.
 
-* **텍스트 임베딩 라이브러리입니다.**    
-Flair에는 제안된 **[Flair embeddings](https://www.aclweb.org/anthology/C18-1139/)**, BERT 임베딩 및 ELMo 임베딩을 포함하여 다양한 단어 및 문서 임베딩을 사용하고 결합할 수 있는 간단한 인터페이스가 있습니다.
+- **텍스트 임베딩 라이브러리입니다.**
+  Flair에는 제안된 **[Flair embeddings](https://www.aclweb.org/anthology/C18-1139/)**, BERT 임베딩 및 ELMo 임베딩을 포함하여 다양한 단어 및 문서 임베딩을 사용하고 결합할 수 있는 간단한 인터페이스가 있습니다.
 
-* **파이토치 NLP 프레임워크입니다.**    
- 우리의 프레임워크는 [PyTorch](https://pytorch.org/)를 기반으로 직접 구축되어 쉽게 자신의 모델을 훈련하고 Flair 임베딩 및 클래스를 사용하여 새로운 접근 방식을 실험할 수 있습니다.
+- **파이토치 NLP 프레임워크입니다.**
+  우리의 프레임워크는 [PyTorch](https://pytorch.org/)를 기반으로 직접 구축되어 쉽게 자신의 모델을 훈련하고 Flair 임베딩 및 클래스를 사용하여 새로운 접근 방식을 실험할 수 있습니다.
 
- 이제 [version 0.9](https://github.com/flairNLP/flair/releases)입니다!
-
+이제 [version 0.9](https://github.com/flairNLP/flair/releases)입니다!
 
 ## Join Us: HU-Berlin에서 채용 공고!
 
@@ -37,16 +36,16 @@ Flair에는 제안된 **[Flair embeddings](https://www.aclweb.org/anthology/C18-
 
 Flair는 다양한 NLP 작업을 위한 최신 모델과 함께 제공됩니다. 예를 들어 최신 NER 모델을 확인해보세요:
 
-| Language | Dataset | Flair | Best published | Model card & demo
-|  ---  | ----------- | ---------------- | ------------- | ------------- |
-| English | Conll-03 (4-class)   |  **94.09**  | *94.3 [(Yamada et al., 2018)](https://doi.org/10.18653/v1/2020.emnlp-main.523)* | [Flair English 4-class NER demo](https://huggingface.co/flair/ner-english-large)  |
-| English | Ontonotes (18-class)  |  **90.93**  | *91.3 [(Yu et al., 2016)](https://www.aclweb.org/anthology/2020.acl-main.577.pdf)* | [Flair English 18-class NER demo](https://huggingface.co/flair/ner-english-ontonotes-large) |
-| German  | Conll-03 (4-class)   |  **92.31**  | *90.3 [(Yu et al., 2016)](https://www.aclweb.org/anthology/2020.acl-main.577.pdf)* | [Flair German 4-class NER demo](https://huggingface.co/flair/ner-german-large)  |
-| Dutch  | Conll-03  (4-class)  |  **95.25**  | *93.7 [(Yu et al., 2016)](https://www.aclweb.org/anthology/2020.acl-main.577.pdf)* | [Flair Dutch 4-class NER demo](https://huggingface.co/flair/ner-dutch-large)  |
-| Spanish  | Conll-03 (4-class)   |  **90.54** | *90.3 [(Yu et al., 2016)](https://www.aclweb.org/anthology/2020.acl-main.577.pdf)* | [Flair Spanish 18-class NER demo](https://huggingface.co/flair/ner-spanish-large)  |
+| Language | Dataset              | Flair     | Best published                                                                     | Model card & demo                                                                           |
+| -------- | -------------------- | --------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| English  | Conll-03 (4-class)   | **94.09** | _94.3 [(Yamada et al., 2018)](https://doi.org/10.18653/v1/2020.emnlp-main.523)_    | [Flair English 4-class NER demo](https://huggingface.co/flair/ner-english-large)            |
+| English  | Ontonotes (18-class) | **90.93** | _91.3 [(Yu et al., 2016)](https://www.aclweb.org/anthology/2020.acl-main.577.pdf)_ | [Flair English 18-class NER demo](https://huggingface.co/flair/ner-english-ontonotes-large) |
+| German   | Conll-03 (4-class)   | **92.31** | _90.3 [(Yu et al., 2016)](https://www.aclweb.org/anthology/2020.acl-main.577.pdf)_ | [Flair German 4-class NER demo](https://huggingface.co/flair/ner-german-large)              |
+| Dutch    | Conll-03 (4-class)   | **95.25** | _93.7 [(Yu et al., 2016)](https://www.aclweb.org/anthology/2020.acl-main.577.pdf)_ | [Flair Dutch 4-class NER demo](https://huggingface.co/flair/ner-dutch-large)                |
+| Spanish  | Conll-03 (4-class)   | **90.54** | _90.3 [(Yu et al., 2016)](https://www.aclweb.org/anthology/2020.acl-main.577.pdf)_ | [Flair Spanish 18-class NER demo](https://huggingface.co/flair/ner-spanish-large)           |
 
-**New:** 
-대부분의 Flair 시퀀스 태깅 모델(명명된 엔티티 인식, 품사 태깅 등)이 이제  [__🤗 HuggingFace model hub__](https://huggingface.co/models?library=flair&sort=downloads)에서 호스팅됩니다! 모델을 검색하고 학습 방법에 대한 자세한 정보를 확인하고 각 모델을 온라인으로 시험해 볼 수도 있습니다!
+**New:**
+대부분의 Flair 시퀀스 태깅 모델(명명된 엔티티 인식, 품사 태깅 등)이 이제 [**🤗 HuggingFace model hub**](https://huggingface.co/models?library=flair&sort=downloads)에서 호스팅됩니다! 모델을 검색하고 학습 방법에 대한 자세한 정보를 확인하고 각 모델을 온라인으로 시험해 볼 수도 있습니다!
 
 ## Quick Start
 
@@ -99,31 +98,32 @@ Span [3]: "Berlin"   [− Labels: LOC (0.9992)]
 
 라이브러리를 시작하는 데 도움이 되는 빠른 튜토리얼 세트를 제공합니다.
 
-* [Tutorial 1: Basics](/resources/docs/KOR_docs/TUTORIAL_1_BASICS.md)
-* [Tutorial 2: Tagging your Text](/resources/docs/KOR_docs/TUTORIAL_2_TAGGING.md)
-* [Tutorial 3: Embedding Words](/resources/docs/KOR_docs/TUTORIAL_3_WORD_EMBEDDING.md)
-* [Tutorial 4: List of All Word Embeddings](/resources/docs/KOR_docs/TUTORIAL_4_ELMO_BERT_FLAIR_EMBEDDING.md)
-* [Tutorial 5: Embedding Documents](/resources/docs/KOR_docs/TUTORIAL_5_DOCUMENT_EMBEDDINGS.md)
-* [Tutorial 6: Loading a Dataset](/resources/docs/KOR_docs/TUTORIAL_6_CORPUS.md)
-* [Tutorial 7: Training a Model](/resources/docs/KOR_docs/TUTORIAL_7_TRAINING_A_MODEL.md)
-* [Tutorial 8: Training your own Flair Embeddings](/resources/docs/KOR_docs/TUTORIAL_8_MODEL_OPTIMIZATION.md)
-* [Tutorial 9: Training a Zero Shot Text Classifier (TARS)](/resources/docs/KOR_docs/TUTORIAL_9_TRAINING_LM_EMBEDDINGS.md)
-* [Tutorial 10: Few-Shot and Zero-Shot Classification (TARS)](/resources/docs/KOR_docs/TUTORIAL_10_TRAINING_ZERO_SHOT_MODEL.md)
+- [Tutorial 1: Basics](/resources/docs/KOR_docs/TUTORIAL_1_BASICS.md)
+- [Tutorial 2: Tagging your Text](/resources/docs/KOR_docs/TUTORIAL_2_TAGGING.md)
+- [Tutorial 3: Embedding Words](/resources/docs/KOR_docs/TUTORIAL_3_WORD_EMBEDDING.md)
+- [Tutorial 4: List of All Word Embeddings](/resources/docs/KOR_docs/TUTORIAL_4_ELMO_BERT_FLAIR_EMBEDDING.md)
+- [Tutorial 5: Embedding Documents](/resources/docs/KOR_docs/TUTORIAL_5_DOCUMENT_EMBEDDINGS.md)
+- [Tutorial 6: Loading a Dataset](/resources/docs/KOR_docs/TUTORIAL_6_CORPUS.md)
+- [Tutorial 7: Training a Model](/resources/docs/KOR_docs/TUTORIAL_7_TRAINING_A_MODEL.md)
+- [Tutorial 8: Training your own Flair Embeddings](/resources/docs/KOR_docs/TUTORIAL_8_MODEL_OPTIMIZATION.md)
+- [Tutorial 9: Training a Zero Shot Text Classifier (TARS)](/resources/docs/KOR_docs/TUTORIAL_9_TRAINING_LM_EMBEDDINGS.md)
+- [Tutorial 10: Few-Shot and Zero-Shot Classification (TARS)](/resources/docs/KOR_docs/TUTORIAL_10_TRAINING_ZERO_SHOT_MODEL.md)
 
 튜토리얼에서는 기본 NLP 클래스가 작동하는 방법, 사전 훈련된 모델을 로드하여 텍스트에 태그를 지정하는 방법, 다른 단어 또는 문서 임베딩으로 텍스트를 포함하는 방법, 고유한 언어 모델, 시퀀스 레이블링 모델 및 텍스트 분류 모델에 대해 설명하고있습니다. 불분명한 것이 있으면 알려주세요.
 
 설치 지침 및 자습서가 포함된 **[biomedical NER and datasets](https://github.com/flairNLP/flair/blob/94393aa82444f28c5a1da6057b8ff57b3cb390e6/resources/docs/HUNFLAIR.md)** 전용 랜딩 페이지도 있습니다.
 
 Flair를 사용하는 방법을 보여주는 훌륭한 타사 기사 및 게시물도 있습니다:
-* [How to build a text classifier with Flair](https://towardsdatascience.com/text-classification-with-state-of-the-art-nlp-library-flair-b541d7add21f)
-* [How to build a microservice with Flair and Flask](https://shekhargulati.com/2019/01/04/building-a-sentiment-analysis-python-microservice-with-flair-and-flask/)
-* [A docker image for Flair](https://towardsdatascience.com/docker-image-for-nlp-5402c9a9069e)
-* [Great overview of Flair functionality and how to use in Colab](https://www.analyticsvidhya.com/blog/2019/02/flair-nlp-library-python/)
-* [Visualisation tool for highlighting the extracted entities](https://github.com/lunayach/visNER)
-* [Practical approach of State-of-the-Art Flair in Named Entity Recognition](https://medium.com/analytics-vidhya/practical-approach-of-state-of-the-art-flair-in-named-entity-recognition-46a837e25e6b)
-* [Benchmarking NER algorithms](https://towardsdatascience.com/benchmark-ner-algorithm-d4ab01b2d4c3)
-* [Training a Flair text classifier on Google Cloud Platform (GCP) and serving predictions on GCP](https://github.com/robinvanschaik/flair-on-gcp)
-* [Model Interpretability for transformer-based Flair models](https://github.com/robinvanschaik/interpret-flair)
+
+- [How to build a text classifier with Flair](https://towardsdatascience.com/text-classification-with-state-of-the-art-nlp-library-flair-b541d7add21f)
+- [How to build a microservice with Flair and Flask](https://shekhargulati.com/2019/01/04/building-a-sentiment-analysis-python-microservice-with-flair-and-flask/)
+- [A docker image for Flair](https://towardsdatascience.com/docker-image-for-nlp-5402c9a9069e)
+- [Great overview of Flair functionality and how to use in Colab](https://www.analyticsvidhya.com/blog/2019/02/flair-nlp-library-python/)
+- [Visualisation tool for highlighting the extracted entities](https://github.com/lunayach/visNER)
+- [Practical approach of State-of-the-Art Flair in Named Entity Recognition](https://medium.com/analytics-vidhya/practical-approach-of-state-of-the-art-flair-in-named-entity-recognition-46a837e25e6b)
+- [Benchmarking NER algorithms](https://towardsdatascience.com/benchmark-ner-algorithm-d4ab01b2d4c3)
+- [Training a Flair text classifier on Google Cloud Platform (GCP) and serving predictions on GCP](https://github.com/robinvanschaik/flair-on-gcp)
+- [Model Interpretability for transformer-based Flair models](https://github.com/robinvanschaik/interpret-flair)
 
 ## Flair 인용하기
 
@@ -179,7 +179,7 @@ Flair 임베딩(PooledFlairEmbeddings)의 풀링 버전을 사용하는 경우 [
 
 질문이나 의견은 [Alan Akbik](http://alanakbik.github.io/)로 이메일을 보내주세요.
 
-한국어 번역에 대한 의견은    
+한국어 번역에 대한 의견은
 김한결(hannn0414@naver.com), 박태현(abnc7800@gmail.com), 최완규(wanq123@gachon.ac.kr)로 이메일을 보내주세요.
 
 ## Contributing
@@ -188,26 +188,22 @@ contributing에 관심을 가져주셔서 감사합니다! 참여하는 방법�
 [contributor guidelines](https://github.com/flairNLP/flair/blob/94393aa82444f28c5a1da6057b8ff57b3cb390e6/CONTRIBUTING.md)으로 시작한 다음
 특정 작업에 대해서는 [open issues](https://github.com/flairNLP/flair/issues)를 확인하세요.
 
-API에 대해 더 깊이 알고자 하는 기여자의 경우 레포지토리를 복제하고 메서드를 호출하는 방법에 대한 예제를 보려면 단위 테스트를 확인하는 것이 좋습니다. 
+API에 대해 더 깊이 알고자 하는 기여자의 경우 레포지토리를 복제하고 메서드를 호출하는 방법에 대한 예제를 보려면 단위 테스트를 확인하는 것이 좋습니다.
 거의 모든 클래스와 메서드가 문서화되어 있으므로 코드를 찾는 것이 쉬울 것입니다.
 
 ### 로컬에서 단위 테스트 실행
 
-이것을 위해 [Pipenv](https://pipenv.readthedocs.io/)가 필요합니다:
+詳しいインストール方法は、英語の Contributing.md ファイルを参照してください。
 
 ```bash
-pipenv install --dev && pipenv shell
+poetry install && poetry shell
 pytest tests/
 ```
 
 통합 테스트를 실행하려면 다음을 실행하세요:
+
 ```bash
 pytest --runintegration tests/
 ```
-통합 테스트는 작은 모델을 훈련합니다.
-그 후에 예측을 위해 훈련된 모델이 로드됩니다.
 
-또한 flair에서 제공하는 임베딩을 로드하고 사용하는 것처럼 느린 테스트를 실행하려면 다음을 실행해야 합니다:
-```bash
-pytest --runslow tests/
-```
+통합 테스트는 작은 모델을 훈련합니다.

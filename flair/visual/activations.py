@@ -1,8 +1,8 @@
 import numpy
 
 
-class Highlighter(object):
-    def __init__(self):
+class Highlighter:
+    def __init__(self) -> None:
         self.color_map = [
             "#ff0000",
             "#ff4000",
@@ -36,14 +36,11 @@ class Highlighter(object):
 
         step_size = (max(activation) - min(activation)) / len(self.color_map)
 
-        lookup = numpy.array(
-            list(numpy.arange(min(activation), max(activation), step_size))
-        )
+        lookup = numpy.array(list(numpy.arange(min(activation), max(activation), step_size)))
 
         colors = []
 
-        for i, act in enumerate(activation):
-
+        for _i, act in enumerate(activation):
             try:
                 colors.append(self.color_map[numpy.where(act > lookup)[0][-1]])
             except IndexError:
@@ -59,16 +56,12 @@ class Highlighter(object):
 
         return str_
 
-    def highlight_selection(
-        self, activations, text, file_="resources/data/highlight.html", n=10
-    ):
-
-        ix = numpy.random.choice(activations.shape[1], size=n)
+    def highlight_selection(self, activations, text, file_="resources/data/highlight.html", n=10):
+        ix = numpy.random.default_rng().choice(activations.shape[1], size=n)
 
         rendered = ""
 
         for i in ix:
-
             rendered += self.highlight(activations[:, i], text)
 
         with open(file_, "w") as f:
@@ -76,4 +69,4 @@ class Highlighter(object):
 
     @staticmethod
     def _render(char, color):
-        return '<span style="background-color: {}">{}</span>'.format(color, char)
+        return f'<span style="background-color: {color}">{char}</span>'

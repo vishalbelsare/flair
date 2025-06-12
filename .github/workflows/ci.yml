@@ -1,26 +1,36 @@
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      HF_HOME: ./cache/transformers
+      FLAIR_CACHE_ROOT: ./cache/flair
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.6
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.9
+        id: setup-python
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.6
+          python-version: 3.9
+      - name: Install Torch cpu
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
       - name: Install Flair dependencies
-        run: |
-          pip install -r requirements.txt
-          python setup.py develop -q
+        run: pip install -e .[word-embeddings]
       - name: Install unittest dependencies
-        run: pip install pytest
+        run: pip install -r requirements-dev.txt
+      - name: Show installed dependencies
+        run: pip freeze
+      - name: Cache downloaded models/datasets
+        uses: actions/cache@v3
+        with:
+          path: ./cache
+          key: cache-v1.2
       - name: Run tests
         run: |
-          cd tests
-          pip freeze
-          pytest --runintegration
+          python -c 'import flair'
+          pytest --runintegration -vv
